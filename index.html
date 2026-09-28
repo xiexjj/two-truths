@@ -40,6 +40,12 @@ textarea{resize:none;height:76px}
 .b0.on{height:240px}.b1.on{height:170px}.b2.on{height:120px}
 .pod::after{content:"";position:absolute}
 .base{height:12px;background:var(--ink);border-radius:6px}
+.board{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px}
+.pl{border:3px solid var(--ink);border-radius:14px;padding:10px 12px;background:#fffdf3;line-height:1.15}
+.pl.ok{background:#d9fbe8}.pl.no{opacity:.6}
+.pl small{display:block;font-weight:500;font-size:.9rem;margin-top:6px}
+.mini{height:10px;border:2px solid var(--ink);border-radius:99px;background:#fff;overflow:hidden;margin-top:6px}
+.mini i{display:block;height:100%;background:var(--g)}
 .cf{position:fixed;top:-40px;font-size:2rem;animation:fall 3s linear forwards;pointer-events:none}
 @keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
 @media(prefers-reduced-motion:reduce){.cf{display:none}.bar,.nm{transition:none}}
@@ -57,43 +63,43 @@ let me=JSON.parse(localStorage.getItem('me')||'null'),game,cur='',Q=[],qi=0,tota
 const cnt=async(t,f)=>{let q=db.from(t).select('*',{count:'exact',head:true});if(f)q=q.not('pick','is',null);return (await q).count||0};
 
 /* ---------- PEMAIN ---------- */
-function joinView(e=''){h(`<div class="wrap"><div class="big">🎭</div><h1>2 Truths<br>1 Lie</h1><p>Tulis 2 hal yang benar dan 1 kebohongan tentang dirimu. Nanti teman-temanmu yang menebak!</p><div class="card"><label>Kode room</label><input type="text" id="c" autocapitalize="characters"><label>Namamu</label><input type="text" id="n"><button class="btn" onclick="join()">Masuk</button><p class="err">${e}</p></div></div>`)}
+function joinView(e=''){h(`<div class="wrap"><div class="big">🎭</div><h1>2 Truths<br>1 Lie</h1><p>Tulis 2 fakta + 1 bohongan soal dirimu. Temen-temenmu yang bakal nebak mana yang boong 👀</p><div class="card"><label>Kode room</label><input type="text" id="c" autocapitalize="characters"><label>Nama kamu</label><input type="text" id="n"><button class="btn" onclick="join()">Gas masuk</button><p class="err">${e}</p></div></div>`)}
 async function join(){
   const c=document.getElementById('c').value.trim().toUpperCase(),n=document.getElementById('n').value.trim();
-  if(c!==CFG.CODE)return joinView('Kode room salah, cek lagi ya.');
-  if(!n)return joinView('Isi namamu dulu ya.');
+  if(c!==CFG.CODE)return joinView('Kodenya belum bener, cek lagi deh.');
+  if(!n)return joinView('Namanya diisi dulu dong.');
   let {data}=await db.from('players').select().eq('name',n).maybeSingle();
   if(!data){const r=await db.from('players').insert({name:n}).select().single();data=r.data}
-  if(!data)return joinView('Gagal masuk, coba lagi.');
+  if(!data)return joinView('Gagal masuk nih, coba sekali lagi.');
   me=data;localStorage.setItem('me',JSON.stringify(me));cur='';tick();
 }
-function formView(e=''){h(`<div class="wrap"><h1>Halo, ${esc(me.name)}!</h1><p>Tulis 3 pernyataan tentang dirimu, lalu centang mana yang <b>bohong</b>.</p>${[0,1,2].map(i=>`<div class="stm"><textarea id="t${i}" maxlength="140" placeholder="Pernyataan ${i+1}"></textarea><label><input type="radio" name="lie" value="${i}"> Yang ini bohong</label></div>`).join('')}<p class="err">${e}</p><button class="btn pink" onclick="sendSet()">Kirim</button></div>`)}
+function formView(e=''){h(`<div class="wrap"><h1>Eh, ${esc(me.name)}!</h1><p>Tulis 3 hal soal kamu: 2 beneran, 1 boongan. Terus centang yang boong. Bikin yang susah ditebak ya 😏</p>${[0,1,2].map(i=>`<div class="stm"><textarea id="t${i}" maxlength="140" placeholder="Hal ke-${i+1} soal kamu"></textarea><label><input type="radio" name="lie" value="${i}"> Ini yang boong</label></div>`).join('')}<p class="err">${e}</p><button class="btn pink" onclick="sendSet()">Kirim!</button></div>`)}
 async function sendSet(){
   const t=[0,1,2].map(i=>document.getElementById('t'+i).value.trim()),l=document.querySelector('input[name=lie]:checked');
-  if(t.some(x=>!x))return formView('Ketiga pernyataan harus diisi.');
-  if(!l)return formView('Centang dulu mana yang bohong.');
+  if(t.some(x=>!x))return formView('Ketiganya diisi dulu dong.');
+  if(!l)return formView('Yang boong yang mana? Centang dulu.');
   const {error}=await db.from('sets').insert({player_id:me.id,s1:t[0],s2:t[1],s3:t[2],lie:+l.value});
-  if(error)return formView('Gagal kirim, coba lagi.');
+  if(error)return formView('Gagal kirim, coba pencet lagi.');
   cur='';tick();
 }
-const waitView=()=>h(`<div class="wrap"><div class="card"><div class="big">⏳</div><h2>Terkirim! Tunggu teman-teman lain menulis...</h2><p><b id="cnt">0</b> orang sudah submit.</p></div></div>`);
+const waitView=()=>h(`<div class="wrap"><div class="card"><div class="big">⏳</div><h2>Sek yoooooooo tunggu teman teman yang lain</h2><p>Baru <b id="cnt">0</b> orang yang selesai.</p></div></div>`);
 async function loadGuess(){
   const {data:g}=await db.from('guesses').select('id,target,pick').eq('guesser',me.id);
-  if(!g.length)return h(msg('⏰','Kamu belum submit tadi, jadi nggak ikut menebak. Nonton layar proyektor ya!'));
+  if(!g.length)return h(msg('⏰','Kamu telat submit, jadi nggak kebagian nebak. Nonton layar aja ya!'));
   const ids=g.map(x=>x.target);
   const [{data:s},{data:p}]=await Promise.all([db.from('sets').select('player_id,s1,s2,s3').in('player_id',ids),db.from('players').select('id,name').in('id',ids)]);
   Q=g.filter(x=>x.pick==null).map(x=>({id:x.id,name:p.find(z=>z.id===x.target).name,st:s.find(z=>z.player_id===x.target)}));
   total=g.length;qi=0;showQ();
 }
 function showQ(){
-  if(qi>=Q.length)return h(msg('🕵️','Semua tebakan terkirim! Tunggu hasilnya di layar proyektor.'));
+  if(qi>=Q.length)return h(msg('🕵️','Kelar semua! Tunggu pengumuman juara di layar ya 🥁'));
   const q=Q[qi],n=total-Q.length+qi+1;q.o=q.o||[0,1,2].sort(()=>Math.random()-.5);
-  h(`<div class="wrap"><div class="bar-p"><i style="width:${(n-1)/total*100}%"></i></div><p>Tebakan ${n} dari ${total}</p><h1>Mana yang bohong?</h1><div class="card"><h2>Punya ${esc(q.name)}</h2>${q.o.map(i=>`<button class="opt" onclick="pick(${i})">${esc(q.st['s'+(i+1)])}</button>`).join('')}</div></div>`);
+  h(`<div class="wrap"><div class="bar-p"><i style="width:${(n-1)/total*100}%"></i></div><p>Tebakan ke-${n} dari ${total}</p><h1>Yang mana yang boong?</h1><div class="card"><h2>Punyanya ${esc(q.name)}</h2>${q.o.map(i=>`<button class="opt" onclick="pick(${i})">${esc(q.st['s'+(i+1)])}</button>`).join('')}</div></div>`);
 }
 async function pick(i){const q=Q[qi++];showQ();await db.from('guesses').update({pick:i,answered_at:new Date().toISOString()}).eq('id',q.id)}
 async function resultView(){
   const r=await calc(),m=r.A.find(a=>a.id===me.id)||{c:0,n:0,f:0};
-  h(`<div class="wrap"><h1>Hasilnya keluar!</h1><div class="stats"><div><b>${m.c}/${m.n}</b>tebakan benar</div><div><b>${m.f}</b>orang berhasil kamu kelabui</div></div><p>Lihat layar proyektor untuk podium juaranya 🏆</p></div>`);
+  h(`<div class="wrap"><h1>Hasilnya udah keluar!</h1><div class="stats"><div><b>${m.c}/${m.n}</b>tebakan bener</div><div><b>${m.f}</b>orang berhasil kamu tipu</div></div><p>Cek layar buat lihat siapa juaranya 🏆</p></div>`);
 }
 async function playerTick(){
   if(!me){if(cur!=='join'){cur='join';joinView()}return}
@@ -120,17 +126,18 @@ async function calc(){
 }
 
 /* ---------- HOST ---------- */
-const pinView=(e='')=>h(`<div class="wrap"><h1>Host 🎤</h1><div class="card"><label>PIN host</label><input type="password" id="pin"><button class="btn" onclick="pin()">Masuk</button><p class="err">${e}</p></div></div>`);
-function pin(){if(document.getElementById('pin').value===CFG.HOST_PIN){sessionStorage.setItem('hp','1');cur='';tick()}else pinView('PIN salah.')}
-const phaseName={submit:'Fase 1: Peserta menulis',guess:'Fase 2: Peserta menebak'};
+const pinView=(e='')=>h(`<div class="wrap"><h1>Host 🎤</h1><div class="card"><label>PIN host</label><input type="password" id="pin"><button class="btn" onclick="pin()">Masuk host</button><p class="err">${e}</p></div></div>`);
+function pin(){if(document.getElementById('pin').value===CFG.HOST_PIN){sessionStorage.setItem('hp','1');cur='';tick()}else pinView('PIN-nya salah.')}
+const phaseName={submit:'Lagi pada nulis',guess:'Lagi pada nebak'};
+let showSt=false;
 function hostPanel(){
   const p=game.phase;
-  h(`<div class="wrap"><h1>Host 🎤</h1><div class="card"><h2>${phaseName[p]}</h2><div class="stats"><div><b id="h1">0</b>peserta</div><div><b id="h2">0</b>sudah submit</div>${p==='guess'?'<div><b id="h3">0</b>tebakan masuk</div>':''}</div>${p==='submit'?'<button class="btn pink" onclick="startGuess()">Mulai fase tebak</button>':'<button class="btn pink" onclick="endGame()">Tutup &amp; tampilkan podium</button>'}</div><button class="btn ghost" onclick="resetAll()">Game baru (hapus semua data)</button></div>`);
+  h(`<div class="wrap wide"><h1>Host 🎤</h1><div class="card"><h2>${phaseName[p]}</h2><div class="stats"><div><b id="h1">0</b>peserta</div><div><b id="h2">0</b>udah submit</div>${p==='guess'?'<div><b id="h3">0</b>tebakan masuk</div>':''}</div>${p==='submit'?'<button class="btn pink" onclick="startGuess()">Mulai nebak!</button>':'<button class="btn pink" onclick="endGame()">Udahan, tampilkan podium</button>'}</div><div class="card"><h2>Siapa lagi ngapain</h2><label style="display:flex;gap:8px;align-items:center"><input type="checkbox" id="showst" ${showSt?'checked':''} onchange="showSt=this.checked;hostTick()"> Intip pernyataan mereka (tanpa kunci jawaban)</label><div id="board" class="board"></div></div><button class="btn ghost" onclick="resetAll()">Reset semua (game baru)</button></div>`);
 }
 async function startGuess(){
   const {data}=await db.from('sets').select('player_id').order('player_id'),P=data.map(x=>x.player_id),n=P.length;
-  if(n<2)return alert('Minimal 2 orang yang sudah submit.');
-  if(!confirm(`Mulai tebak dengan ${n} peserta? Yang belum submit tidak ikut.`))return;
+  if(n<2)return alert('Minimal 2 orang harus udah submit dulu.');
+  if(!confirm(`Mulai nebak sama ${n} orang? Yang belum submit nggak ikut ya.`))return;
   const K=Math.min(CFG.PER,n-1),rows=[];
   P.forEach((g,i)=>{for(let j=1;j<=K;j++)rows.push({guesser:g,target:P[(i+j)%n]})});
   await db.from('guesses').insert(rows);
@@ -139,14 +146,14 @@ async function startGuess(){
 }
 async function endGame(){await db.from('game').update({phase:'result'}).eq('id',1);cur='';tick()}
 async function resetAll(){
-  if(!confirm('Hapus semua peserta & jawaban?'))return;
+  if(!confirm('Yakin hapus semua peserta & jawaban?'))return;
   await db.from('players').delete().neq('id','00000000-0000-0000-0000-000000000000');
   await db.from('game').update({phase:'submit',started_at:null}).eq('id',1);cur='';tick();
 }
 const shown=(i,n)=>n>=3-i;
 const cat=(t,e,l,n,f)=>`<div><h2>${e} ${t}</h2><div class="pod">${[1,0,2].map(i=>{const a=l[i];return a?`<div class="col"><div class="nm ${shown(i,n)?'on':''}"><b>${esc(a.name)}</b><small>${f(a)}</small></div><div class="bar b${i} ${shown(i,n)?'on':''}">${['🥇','🥈','🥉'][i]}</div></div>`:''}).join('')}</div><div class="base"></div></div>`;
 function podium(){
-  h(`<div class="wrap wide"><h1 style="text-align:center">Podium Juara 🏆</h1><div class="grid">${cat('Detektif Terbaik','🕵️',R.det,Math.min(rs,3),a=>a.c+' tebakan benar')}${cat('Pembohong Terbaik','🤥',R.liar,Math.max(0,rs-3),a=>a.f+' orang terkelabui')}</div><div style="text-align:center">${rs<6?'<button class="btn pink" onclick="nextRev()">Buka juara berikutnya</button>':'<button class="btn ghost" onclick="resetAll()">Game baru</button>'}</div></div>`);
+  h(`<div class="wrap wide"><h1 style="text-align:center">Podium Juara 🏆</h1><div class="grid">${cat('Detektif Terbaik','🕵️',R.det,Math.min(rs,3),a=>a.c+' tebakan bener')}${cat('Tukang Boong Ni','🤥',R.liar,Math.max(0,rs-3),a=>a.f+' orang ketipu')}</div><div style="text-align:center">${rs<6?'<button class="btn pink" onclick="nextRev()">Drumroll dulu bes</button>':'<button class="btn ghost" onclick="resetAll()">Main lagi</button>'}</div></div>`);
 }
 function nextRev(){rs++;podium();if(rs===3||rs===6)confetti()}
 function confetti(){for(let i=0;i<40;i++){const d=document.createElement('div');d.className='cf';d.textContent=['🎉','✨','🎊','⭐'][i%4];d.style.left=Math.random()*100+'vw';d.style.animationDelay=Math.random()*1.2+'s';document.body.appendChild(d);setTimeout(()=>d.remove(),4500)}}
@@ -154,8 +161,20 @@ async function hostTick(){
   if(sessionStorage.getItem('hp')!=='1'){if(cur!=='pin'){cur='pin';pinView()}return}
   if(game.phase==='result'){if(cur!=='hr'){cur='hr';R=await calc();rs=0;podium()}return}
   const k='h'+game.phase;if(cur!==k){cur=k;hostPanel()}
-  const [a,b,c]=await Promise.all([cnt('players'),cnt('sets'),game.phase==='guess'?cnt('guesses',1):0]);
-  [[a,'h1'],[b,'h2'],[c,'h3']].forEach(([v,id])=>{const e=document.getElementById(id);if(e)e.textContent=v});
+  const [{data:pl},{data:st},{data:g}]=await Promise.all([db.from('players').select('id,name').order('name'),db.from('sets').select('player_id,s1,s2,s3'),game.phase==='guess'?db.from('guesses').select('guesser,pick'):{data:[]}]);
+  const done=g.filter(x=>x.pick!=null);
+  [[pl.length,'h1'],[st.length,'h2'],[done.length,'h3']].forEach(([v,id])=>{const e=document.getElementById(id);if(e)e.textContent=v});
+  const b=document.getElementById('board');if(!b)return;
+  b.innerHTML=pl.map(p=>{
+    const s=st.find(x=>x.player_id===p.id),mine=g.filter(x=>x.guesser===p.id),d=mine.filter(x=>x.pick!=null).length;
+    let info;
+    if(game.phase==='submit')info=s?'✅ udah kirim':'⏳ masih nulis...';
+    else if(!mine.length)info='telat, nggak ikut nebak';
+    else info=`nebak ${d}/${mine.length}<div class="mini"><i style="width:${d/mine.length*100}%"></i></div>`;
+    const ok=game.phase==='submit'?!!s:(mine.length&&d===mine.length);
+    const txt=showSt&&s?`<small>• ${esc(s.s1)}<br>• ${esc(s.s2)}<br>• ${esc(s.s3)}</small>`:'';
+    return `<div class="pl ${ok?'ok':''} ${game.phase==='guess'&&!mine.length?'no':''}"><b>${esc(p.name)}</b><small>${info}</small>${txt}</div>`;
+  }).join('');
 }
 
 /* ---------- LOOP ---------- */
