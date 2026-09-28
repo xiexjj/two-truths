@@ -47,9 +47,7 @@ textarea{resize:none;height:76px}
 <body><div id="app"></div>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
 <script>
-// ====== ISI BAGIAN INI ======
-const CFG={URL:'https://supabase.com/dashboard/project/gamyctjztxkawizectep/sql/ba0620f0-9448-4dc5-b2e2-e12002f48b8a',KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhbXljdGp6dHhrYXdpemVjdGVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1ODE5NDgsImV4cCI6MjEwNjE1Nzk0OH0.8jwtVtlMBRQvdWFgsEJWQdLZULdScItJP9xV6XicicY',CODE:'BEPETUJU',HOST_PIN:'1234',PER:10};
-// ============================
+const CFG={URL:'https://gamyctjztxkawizectep.supabase.co',KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhbXljdGp6dHhrYXdpemVjdGVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1ODE5NDgsImV4cCI6MjEwNjE1Nzk0OH0.8jwtVtlMBRQvdWFgsEJWQdLZULdScItJP9xV6XicicY',CODE:'BEPETUJU',HOST_PIN:'1234',PER:10};
 const db=supabase.createClient(CFG.URL,CFG.KEY);
 const A=document.getElementById('app'),h=s=>A.innerHTML=s;
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
