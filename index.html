@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="id"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>2 Truths 1 Lie</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#1e1b4b;--bg:#f3ebff;--y:#ffd93d;--p:#ff5d8f;--b:#4f6bff;--g:#3ddc97}
+*{box-sizing:border-box}
+body{margin:0;font-family:'Baloo 2',system-ui,sans-serif;background:var(--bg);color:var(--ink);font-size:18px;min-height:100vh}
+.wrap{max-width:680px;margin:0 auto;padding:24px 16px 60px}
+.wrap.wide{max-width:1100px}
+h1{font-size:clamp(2.4rem,8vw,4rem);line-height:.95;margin:.2em 0 .3em;font-weight:800}
+h2{margin:.2em 0;font-size:1.6rem}
+.card{background:#fff;border:3px solid var(--ink);border-radius:20px;box-shadow:6px 6px 0 var(--ink);padding:20px;margin:16px 0}
+label{font-weight:700;display:block;margin-top:12px}
+input[type=text],input[type=password],textarea{width:100%;font:inherit;padding:10px 14px;border:3px solid var(--ink);border-radius:14px;background:#fffdf3;margin-top:4px}
+textarea{resize:none;height:76px}
+.btn,.opt{font:inherit;font-weight:800;cursor:pointer;border:3px solid var(--ink);border-radius:16px;box-shadow:4px 4px 0 var(--ink);background:var(--y);color:var(--ink);padding:12px 22px;margin-top:16px;transition:transform .08s,box-shadow .08s}
+.btn:active,.opt:active{transform:translate(4px,4px);box-shadow:0 0 0 var(--ink)}
+.btn.pink{background:var(--p);color:#fff}.btn.ghost{background:#fff}
+.opt{display:block;width:100%;text-align:left;background:#fff;font-weight:600;margin-top:12px}
+.opt:hover{background:var(--y)}
+.stm{background:#fff8d6;border:3px solid var(--ink);border-radius:16px;padding:12px;margin-top:12px}
+.stm label{display:flex;gap:8px;align-items:center;margin:6px 0 0;color:var(--p)}
+.err{color:#d6204f;font-weight:700;min-height:1.4em}
+.big{font-size:4rem;line-height:1}
+.bar-p{height:16px;border:3px solid var(--ink);border-radius:99px;background:#fff;overflow:hidden}
+.bar-p i{display:block;height:100%;background:var(--g)}
+.stats{display:flex;gap:12px;flex-wrap:wrap}.stats div{flex:1;min-width:120px;background:var(--y);border:3px solid var(--ink);border-radius:16px;padding:10px;text-align:center}
+.stats b{font-size:2.4rem;display:block;line-height:1}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:28px}
+@media(max-width:800px){.grid{grid-template-columns:1fr}}
+.pod{display:flex;align-items:flex-end;justify-content:center;gap:10px;height:400px}
+.col{width:31%;text-align:center}
+.nm{opacity:0;transform:translateY(20px);transition:all .6s .5s;margin-bottom:8px;line-height:1.1}
+.nm b{display:block;font-size:1.5rem}.nm small{font-size:1rem}
+.nm.on{opacity:1;transform:none}
+.bar{height:0;overflow:hidden;border:3px solid var(--ink);border-bottom:0;border-radius:16px 16px 0 0;font-size:3rem;padding-top:8px;transition:height 1s cubic-bezier(.3,1.4,.5,1)}
+.b0{background:var(--y)}.b1{background:var(--b)}.b2{background:var(--p)}
+.b0.on{height:240px}.b1.on{height:170px}.b2.on{height:120px}
+.pod::after{content:"";position:absolute}
+.base{height:12px;background:var(--ink);border-radius:6px}
+.cf{position:fixed;top:-40px;font-size:2rem;animation:fall 3s linear forwards;pointer-events:none}
+@keyframes fall{to{transform:translateY(110vh) rotate(540deg)}}
+@media(prefers-reduced-motion:reduce){.cf{display:none}.bar,.nm{transition:none}}
+</style></head>
+<body><div id="app"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.min.js"></script>
+<script>
+// ====== ISI BAGIAN INI ======
+const CFG={URL:'https://supabase.com/dashboard/project/gamyctjztxkawizectep/sql/ba0620f0-9448-4dc5-b2e2-e12002f48b8a',KEY:'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImdhbXljdGp6dHhrYXdpemVjdGVwIiwicm9sZSI6ImFub24iLCJpYXQiOjE3OTA1ODE5NDgsImV4cCI6MjEwNjE1Nzk0OH0.8jwtVtlMBRQvdWFgsEJWQdLZULdScItJP9xV6XicicY',CODE:'BEPETUJU',HOST_PIN:'1234',PER:10};
+// ============================
+const db=supabase.createClient(CFG.URL,CFG.KEY);
+const A=document.getElementById('app'),h=s=>A.innerHTML=s;
+const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const msg=(i,t)=>`<div class="wrap"><div class="card"><div class="big">${i}</div><h2>${t}</h2></div></div>`;
+const isHost=location.hash==='#host';
+let me=JSON.parse(localStorage.getItem('me')||'null'),game,cur='',Q=[],qi=0,total=0,R,rs=0;
+const cnt=async(t,f)=>{let q=db.from(t).select('*',{count:'exact',head:true});if(f)q=q.not('pick','is',null);return (await q).count||0};
+
+/* ---------- PEMAIN ---------- */
+function joinView(e=''){h(`<div class="wrap"><div class="big">🎭</div><h1>2 Truths<br>1 Lie</h1><p>Tulis 2 hal yang benar dan 1 kebohongan tentang dirimu. Nanti teman-temanmu yang menebak!</p><div class="card"><label>Kode room</label><input type="text" id="c" autocapitalize="characters"><label>Namamu</label><input type="text" id="n"><button class="btn" onclick="join()">Masuk</button><p class="err">${e}</p></div></div>`)}
+async function join(){
+  const c=document.getElementById('c').value.trim().toUpperCase(),n=document.getElementById('n').value.trim();
+  if(c!==CFG.CODE)return joinView('Kode room salah, cek lagi ya.');
+  if(!n)return joinView('Isi namamu dulu ya.');
+  let {data}=await db.from('players').select().eq('name',n).maybeSingle();
+  if(!data){const r=await db.from('players').insert({name:n}).select().single();data=r.data}
+  if(!data)return joinView('Gagal masuk, coba lagi.');
+  me=data;localStorage.setItem('me',JSON.stringify(me));cur='';tick();
+}
+function formView(e=''){h(`<div class="wrap"><h1>Halo, ${esc(me.name)}!</h1><p>Tulis 3 pernyataan tentang dirimu, lalu centang mana yang <b>bohong</b>.</p>${[0,1,2].map(i=>`<div class="stm"><textarea id="t${i}" maxlength="140" placeholder="Pernyataan ${i+1}"></textarea><label><input type="radio" name="lie" value="${i}"> Yang ini bohong</label></div>`).join('')}<p class="err">${e}</p><button class="btn pink" onclick="sendSet()">Kirim</button></div>`)}
+async function sendSet(){
+  const t=[0,1,2].map(i=>document.getElementById('t'+i).value.trim()),l=document.querySelector('input[name=lie]:checked');
+  if(t.some(x=>!x))return formView('Ketiga pernyataan harus diisi.');
+  if(!l)return formView('Centang dulu mana yang bohong.');
+  const {error}=await db.from('sets').insert({player_id:me.id,s1:t[0],s2:t[1],s3:t[2],lie:+l.value});
+  if(error)return formView('Gagal kirim, coba lagi.');
+  cur='';tick();
+}
+const waitView=()=>h(`<div class="wrap"><div class="card"><div class="big">⏳</div><h2>Terkirim! Tunggu teman-teman lain menulis...</h2><p><b id="cnt">0</b> orang sudah submit.</p></div></div>`);
+async function loadGuess(){
+  const {data:g}=await db.from('guesses').select('id,target,pick').eq('guesser',me.id);
+  if(!g.length)return h(msg('⏰','Kamu belum submit tadi, jadi nggak ikut menebak. Nonton layar proyektor ya!'));
+  const ids=g.map(x=>x.target);
+  const [{data:s},{data:p}]=await Promise.all([db.from('sets').select('player_id,s1,s2,s3').in('player_id',ids),db.from('players').select('id,name').in('id',ids)]);
+  Q=g.filter(x=>x.pick==null).map(x=>({id:x.id,name:p.find(z=>z.id===x.target).name,st:s.find(z=>z.player_id===x.target)}));
+  total=g.length;qi=0;showQ();
+}
+function showQ(){
+  if(qi>=Q.length)return h(msg('🕵️','Semua tebakan terkirim! Tunggu hasilnya di layar proyektor.'));
+  const q=Q[qi],n=total-Q.length+qi+1;q.o=q.o||[0,1,2].sort(()=>Math.random()-.5);
+  h(`<div class="wrap"><div class="bar-p"><i style="width:${(n-1)/total*100}%"></i></div><p>Tebakan ${n} dari ${total}</p><h1>Mana yang bohong?</h1><div class="card"><h2>Punya ${esc(q.name)}</h2>${q.o.map(i=>`<button class="opt" onclick="pick(${i})">${esc(q.st['s'+(i+1)])}</button>`).join('')}</div></div>`);
+}
+async function pick(i){const q=Q[qi++];showQ();await db.from('guesses').update({pick:i,answered_at:new Date().toISOString()}).eq('id',q.id)}
+async function resultView(){
+  const r=await calc(),m=r.A.find(a=>a.id===me.id)||{c:0,n:0,f:0};
+  h(`<div class="wrap"><h1>Hasilnya keluar!</h1><div class="stats"><div><b>${m.c}/${m.n}</b>tebakan benar</div><div><b>${m.f}</b>orang berhasil kamu kelabui</div></div><p>Lihat layar proyektor untuk podium juaranya 🏆</p></div>`);
+}
+async function playerTick(){
+  if(!me){if(cur!=='join'){cur='join';joinView()}return}
+  const p=game.phase;
+  if(p==='submit'){
+    const [{data:pl},{data:s}]=await Promise.all([db.from('players').select('id'),db.from('sets').select('player_id')]);
+    if(!pl.some(x=>x.id===me.id)){localStorage.removeItem('me');me=null;cur='';return}
+    const mine=s.some(x=>x.player_id===me.id),k='s'+mine;
+    if(cur!==k){cur=k;mine?waitView():formView()}
+    if(mine)document.getElementById('cnt').textContent=s.length;
+  }else if(p==='guess'){if(cur!=='g'){cur='g';await loadGuess()}}
+  else if(cur!=='r'){cur='r';await resultView()}
+}
+
+/* ---------- SKOR ---------- */
+async function calc(){
+  const [{data:pl},{data:st},{data:g}]=await Promise.all([db.from('players').select('id,name'),db.from('sets').select('player_id,lie'),db.from('guesses').select('guesser,target,pick,answered_at').not('pick','is',null)]);
+  const t0=new Date(game.started_at).getTime(),lie={},S={};
+  st.forEach(x=>lie[x.player_id]=x.lie);
+  pl.forEach(p=>S[p.id]={id:p.id,name:p.name,c:0,t:0,n:0,f:0,has:lie[p.id]!==undefined});
+  g.forEach(x=>{const d=S[x.guesser];d.n++;if(x.pick===lie[x.target]){d.c++;d.t+=new Date(x.answered_at)-t0}else S[x.target].f++});
+  const A=Object.values(S);
+  return{A,det:A.filter(a=>a.n).sort((a,b)=>b.c-a.c||a.t-b.t),liar:A.filter(a=>a.has).sort((a,b)=>b.f-a.f||a.c-b.c)};
+}
+
+/* ---------- HOST ---------- */
+const pinView=(e='')=>h(`<div class="wrap"><h1>Host 🎤</h1><div class="card"><label>PIN host</label><input type="password" id="pin"><button class="btn" onclick="pin()">Masuk</button><p class="err">${e}</p></div></div>`);
+function pin(){if(document.getElementById('pin').value===CFG.HOST_PIN){sessionStorage.setItem('hp','1');cur='';tick()}else pinView('PIN salah.')}
+const phaseName={submit:'Fase 1: Peserta menulis',guess:'Fase 2: Peserta menebak'};
+function hostPanel(){
+  const p=game.phase;
+  h(`<div class="wrap"><h1>Host 🎤</h1><div class="card"><h2>${phaseName[p]}</h2><div class="stats"><div><b id="h1">0</b>peserta</div><div><b id="h2">0</b>sudah submit</div>${p==='guess'?'<div><b id="h3">0</b>tebakan masuk</div>':''}</div>${p==='submit'?'<button class="btn pink" onclick="startGuess()">Mulai fase tebak</button>':'<button class="btn pink" onclick="endGame()">Tutup &amp; tampilkan podium</button>'}</div><button class="btn ghost" onclick="resetAll()">Game baru (hapus semua data)</button></div>`);
+}
+async function startGuess(){
+  const {data}=await db.from('sets').select('player_id').order('player_id'),P=data.map(x=>x.player_id),n=P.length;
+  if(n<2)return alert('Minimal 2 orang yang sudah submit.');
+  if(!confirm(`Mulai tebak dengan ${n} peserta? Yang belum submit tidak ikut.`))return;
+  const K=Math.min(CFG.PER,n-1),rows=[];
+  P.forEach((g,i)=>{for(let j=1;j<=K;j++)rows.push({guesser:g,target:P[(i+j)%n]})});
+  await db.from('guesses').insert(rows);
+  await db.from('game').update({phase:'guess',started_at:new Date().toISOString()}).eq('id',1);
+  cur='';tick();
+}
+async function endGame(){await db.from('game').update({phase:'result'}).eq('id',1);cur='';tick()}
+async function resetAll(){
+  if(!confirm('Hapus semua peserta & jawaban?'))return;
+  await db.from('players').delete().neq('id','00000000-0000-0000-0000-000000000000');
+  await db.from('game').update({phase:'submit',started_at:null}).eq('id',1);cur='';tick();
+}
+const shown=(i,n)=>n>=3-i;
+const cat=(t,e,l,n,f)=>`<div><h2>${e} ${t}</h2><div class="pod">${[1,0,2].map(i=>{const a=l[i];return a?`<div class="col"><div class="nm ${shown(i,n)?'on':''}"><b>${esc(a.name)}</b><small>${f(a)}</small></div><div class="bar b${i} ${shown(i,n)?'on':''}">${['🥇','🥈','🥉'][i]}</div></div>`:''}).join('')}</div><div class="base"></div></div>`;
+function podium(){
+  h(`<div class="wrap wide"><h1 style="text-align:center">Podium Juara 🏆</h1><div class="grid">${cat('Detektif Terbaik','🕵️',R.det,Math.min(rs,3),a=>a.c+' tebakan benar')}${cat('Pembohong Terbaik','🤥',R.liar,Math.max(0,rs-3),a=>a.f+' orang terkelabui')}</div><div style="text-align:center">${rs<6?'<button class="btn pink" onclick="nextRev()">Buka juara berikutnya</button>':'<button class="btn ghost" onclick="resetAll()">Game baru</button>'}</div></div>`);
+}
+function nextRev(){rs++;podium();if(rs===3||rs===6)confetti()}
+function confetti(){for(let i=0;i<40;i++){const d=document.createElement('div');d.className='cf';d.textContent=['🎉','✨','🎊','⭐'][i%4];d.style.left=Math.random()*100+'vw';d.style.animationDelay=Math.random()*1.2+'s';document.body.appendChild(d);setTimeout(()=>d.remove(),4500)}}
+async function hostTick(){
+  if(sessionStorage.getItem('hp')!=='1'){if(cur!=='pin'){cur='pin';pinView()}return}
+  if(game.phase==='result'){if(cur!=='hr'){cur='hr';R=await calc();rs=0;podium()}return}
+  const k='h'+game.phase;if(cur!==k){cur=k;hostPanel()}
+  const [a,b,c]=await Promise.all([cnt('players'),cnt('sets'),game.phase==='guess'?cnt('guesses',1):0]);
+  [[a,'h1'],[b,'h2'],[c,'h3']].forEach(([v,id])=>{const e=document.getElementById(id);if(e)e.textContent=v});
+}
+
+/* ---------- LOOP ---------- */
+let busy=false;
+async function tick(){
+  if(busy)return;busy=true;
+  try{const {data}=await db.from('game').select().eq('id',1).single();game=data;await(isHost?hostTick():playerTick())}
+  catch(e){console.error(e)}
+  busy=false;
+}
+tick();setInterval(tick,2000);
+</script></body></html>
