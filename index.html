@@ -26,6 +26,11 @@ textarea{resize:none;height:76px}
 .big{font-size:4rem;line-height:1}
 .bar-p{height:16px;border:3px solid var(--ink);border-radius:99px;background:#fff;overflow:hidden}
 .bar-p i{display:block;height:100%;background:var(--g)}
+.tmr{display:flex;align-items:center;gap:10px;font-weight:800;margin-top:8px}
+.tmr .bar-p{flex:1}
+.tmr .bar-p i{background:var(--b);transition:width 1s linear}
+.tmr .bar-p i.low{background:var(--p)}
+.tsec{min-width:2.6em;text-align:right}
 .stats{display:flex;gap:12px;flex-wrap:wrap}.stats div{flex:1;min-width:120px;background:var(--y);border:3px solid var(--ink);border-radius:16px;padding:10px;text-align:center}
 .stats b{font-size:2.4rem;display:block;line-height:1}
 .grid{display:grid;grid-template-columns:1fr 1fr;gap:28px}
@@ -91,12 +96,24 @@ async function loadGuess(){
   Q=g.filter(x=>x.pick==null).map(x=>({id:x.id,name:p.find(z=>z.id===x.target).name,st:s.find(z=>z.player_id===x.target)}));
   total=g.length;qi=0;showQ();
 }
+const QTIME=60;
+let qTimer=null,qLeft=QTIME;
+function stopQTimer(){if(qTimer){clearInterval(qTimer);qTimer=null}}
 function showQ(){
+  stopQTimer();
   if(qi>=Q.length)return h(msg('🕵️','Kelar semua! Tunggu pengumuman juara di layar ya 🥁'));
   const q=Q[qi],n=total-Q.length+qi+1;q.o=q.o||[0,1,2].sort(()=>Math.random()-.5);
-  h(`<div class="wrap"><div class="bar-p"><i style="width:${(n-1)/total*100}%"></i></div><p>Tebakan ke-${n} dari ${total}</p><h1>Yang mana yang boong?</h1><div class="card"><h2>Punyanya ${esc(q.name)}</h2>${q.o.map(i=>`<button class="opt" onclick="pick(${i})">${esc(q.st['s'+(i+1)])}</button>`).join('')}</div></div>`);
+  h(`<div class="wrap"><div class="bar-p"><i style="width:${(n-1)/total*100}%"></i></div><p>Tebakan ke-${n} dari ${total}</p><h1>Yang mana yang boong?</h1><div class="tmr">⏱️<div class="bar-p"><i id="tbar" style="width:100%"></i></div><span class="tsec" id="tsec">60s</span></div><div class="card"><h2>Punyanya ${esc(q.name)}</h2>${q.o.map(i=>`<button class="opt" onclick="pick(${i})">${esc(q.st['s'+(i+1)])}</button>`).join('')}</div></div>`);
+  qLeft=QTIME;
+  qTimer=setInterval(()=>{
+    qLeft--;
+    const bar=document.getElementById('tbar'),sec=document.getElementById('tsec');
+    if(bar){bar.style.width=(qLeft/QTIME*100)+'%';bar.classList.toggle('low',qLeft<=10)}
+    if(sec)sec.textContent=qLeft+'s';
+    if(qLeft<=0){stopQTimer();pick(-1)}
+  },1000);
 }
-async function pick(i){const q=Q[qi++];showQ();await db.from('guesses').update({pick:i,answered_at:new Date().toISOString()}).eq('id',q.id)}
+async function pick(i){stopQTimer();const q=Q[qi++];showQ();await db.from('guesses').update({pick:i,answered_at:new Date().toISOString()}).eq('id',q.id)}
 async function resultView(){
   const r=await calc(),m=r.A.find(a=>a.id===me.id)||{c:0,n:0,f:0};
   h(`<div class="wrap"><h1>Hasilnya udah keluar!</h1><div class="stats"><div><b>${m.c}/${m.n}</b>tebakan bener</div><div><b>${m.f}</b>orang berhasil kamu tipu</div></div><p>Cek layar buat lihat siapa juaranya 🏆</p></div>`);
